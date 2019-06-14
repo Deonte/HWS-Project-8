@@ -23,6 +23,7 @@ class ViewController: UIViewController {
             scoreLabel.text = "Score: \(score)"
         }
     }
+    var numberOfTries = 7
     var level = 1
     
     override func loadView() {
@@ -72,8 +73,12 @@ class ViewController: UIViewController {
         clear.addTarget(self, action: #selector(clearTapped), for: .touchUpInside)
         view.addSubview(clear)
         
+        // Challenge 1: Use the techniques you learned in project 2 to draw a thin gray line around the buttons view, to make it stand out from the rest of the UI.
         let buttonsView = UIView()
         buttonsView.translatesAutoresizingMaskIntoConstraints = false
+        buttonsView.layer.borderWidth = 2
+        buttonsView.layer.cornerRadius = 25
+        buttonsView.layer.borderColor = UIColor.lightGray.cgColor
         view.addSubview(buttonsView)
         
         NSLayoutConstraint.activate([
@@ -146,6 +151,7 @@ class ViewController: UIViewController {
     @objc func submitTapped(_ sender: UIButton) {
         guard let answerText = currentAnswer.text else {return}
         
+        numberOfTries -= 1
         if let solutionPosition = solutions.firstIndex(of: answerText) {
             activatedButtons.removeAll()
             
@@ -156,17 +162,46 @@ class ViewController: UIViewController {
             currentAnswer.text = ""
             score += 1
             
-            if score % 7 == 0 {
-                let ac = UIAlertController(title: "Well done!", message: "Are you ready for the next level?", preferredStyle: .alert)
-                ac.addAction(UIAlertAction(title: "Let's go!", style: .default, handler: levelUp))
-                
-                present(ac, animated:  true)
+            
+            if score % 7 == 0 && numberOfTries == 0 {
+                //                let ac = UIAlertController(title: "Well done!", message: "Are you ready for the next level?", preferredStyle: .alert)
+                //                ac.addAction(UIAlertAction(title: "Let's go!", style: .default, handler: levelUp))
+                //                present(ac, animated:  true)
+                handleAlert(title: "Well Done!", alertTitle: "Let's go!", message: "You got all answers correct! Let's go the the next level!" , action: levelUp)
             }
+        }  else if numberOfTries == 0 {
+            handleAlert(title: "Let's give it another go", alertTitle: "Try again", message: "You have to get all the words correct before we can advance to the next level.", action: repeatLevel)
         }
+        else {
+            handleAlert(title: "Incorrect!", alertTitle: "Dismiss", message: "Sorry, try again.", action: nil)
+        }
+        
+        print("NumberOfTries:  \(numberOfTries)")
+    }
+    
+    func handleAlert(title: String, alertTitle: String, message: String, action: ((UIAlertAction) -> Void)?) {
+        let ac = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: alertTitle, style: .default, handler: action))
+        present(ac, animated:  true)
     }
     
     func levelUp(action: UIAlertAction) {
         level += 1
+        score = 0
+        numberOfTries = 7
+        
+        solutions.removeAll(keepingCapacity: true)
+        loadLevel()
+        
+        for button in letterButtons {
+            button.isHidden = false
+        }
+    }
+    
+    func repeatLevel(action: UIAlertAction) {
+        numberOfTries = 7
+        score = 0
+        currentAnswer.text = ""
         
         solutions.removeAll(keepingCapacity: true)
         loadLevel()
